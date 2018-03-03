@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<!--
+*名称：消方块
+*作者：龙祥君
+*邮箱：1254624823@qq.com
+*描述：
+经典的消方块游戏，使用面向过程的方法实现。游戏开始后，通过定时器在8列ul的尾部动态添加li元素，颜色随机生成。通过监听点击事件，用递归方法找出与被点击方块颜色相同并能连成一片的方块，然后将其存入数组，之后再统一删除DOM中的li节点。在底部的li被删除后，上面的li元素自动下落，填补空缺位置。游戏中的元素全部用CSS样式实现，不包含任何图片。
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<title>方块消消看</title>
+<style>
+dl,dd,p{ margin:0; padding:0;}
+#box{ width:404px; height:574px; background:#ad7e0a; padding:10px; margin:40px auto; position:relative;}
+dl{ background:#5a0002; height:60px; margin-bottom:10px;}
+dt,dd{ height:30px; font-size:30px; padding:15px;}
+dt{ float:left; color:#fe9800;}
+dd{ float:right;}
+span{ color:#ffff00;}
+em{ position:relative; top:0; left:0; margin-left:30px;}
+input{ float:left; height:30px; width:60px; font-size:18px;}
+p{ width:404px; height:52px; border-top:4px solid #b6841f; position:absolute; bottom:10px; background:#000; opacity:0.8;}
+#main{ width:400px; height:500px; padding:2px; background: #5a0002; position:relative;}
+ul{ position:absolute; bottom:2px; margin:0; padding:0; list-style:none; width:50px;}
+li{ width:36px; height:36px; float:left; margin:1px; border:6px solid; position:relative; top:0;}
+.red{ background:#e13221;  border-color:#d5301a #b60000 #b60000 #d5301a;}
+.green{ background:#75bd1b; border-color:#66b21e #016f00 #016f00 #66b21e;}
+.violet{ background:#aa37d4; border-color:#9642d8 #5a01a7 #5a01a7 #9642d8;}
+.blue{ background:#3f94ee; border-color:#4397ef #002de2 #002de2 #4397ef;}
+.mark{ background:#000; border-color:#000;}
+#tofirstpage {
+	position: absolute;
+	left: 10px;
+	top: 10px;
+	width: 30px;
+	height: 30px;
+	border-radius: 50%;
+	background: url(../img/tofirstpage.jpg) no-repeat;
+	background-position: -62px -233px;
+	z-index: 25;
+}
+</style>
+<script>
+window.onload=function (){
+	
+	var aUl=document.getElementsByTagName('ul');
+	var oSpan=document.getElementsByTagName('span')[0];
+	var oEm=document.getElementsByTagName('em')[0];
+	var oBtn=document.getElementsByTagName('input')[0];
+	var oDiv=document.getElementById('main');
+	
+	var arr=['red','green','violet','blue'];
+	var time=3000;
+	var num=0;
+	
+	for(var i=0;i<aUl.length;i++){
+	
+		aUl[i].style.left=(50*i+2)+'px';	
+	}
+	
+	add();add();
+	
+	oBtn.onclick=function (){
+		
+		if(oBtn.onOff) return;
+		oBtn.onOff=true;	
+		
+		num=0;
+		add();
+		
+		time-=100;
+		oBtn.timer=setInterval(add,time);
+	};
+	
+	function add(){
+		
+		for(var i=0;i<aUl.length;i++){
+		
+			aUl[i].index=i;
+		
+			var oLi=document.createElement('li');
+			
+			arr.sort(function (){
+			
+				return Math.random()-0.5;		
+			})
+			
+			oLi.className=arr[0];	
+			
+			oLi.onclick=function (){
+			
+				if(!oBtn.onOff){
+				
+					alert('请先点击开始按钮！')
+					return;
+				} 
+			
+				var aLi=document.getElementsByTagName('li');
+				var that=this;
+				var arr=[];
+				
+				neibor(that);
+				
+				for(var i=0;i<aLi.length;i++){
+				
+					if(aLi[i].mark){
+						
+						arr.push(aLi[i])
+					}
+				}
+				
+				num+=arr.length*10;
+				oSpan.innerHTML=num;
+				
+				if(!arr.length){
+					
+					oEm.innerHTML='无效！';
+					
+				}else{
+					
+					oEm.innerHTML='+'+arr.length*10;
+				}
+				
+				shake(oEm,'left',20,20,function (){
+				
+					oEm.innerHTML='';
+				})
+				
+				for(var i=0;i<arr.length;i++){
+				
+					arr[i].className='mark';
+				}
+				
+				clearTimeout(oLi.timer);
+				
+				oLi.timer=setTimeout(function (){
+				
+					for(var i=0;i<arr.length;i++){
+					
+						arr[i].parentNode.removeChild(arr[i]);
+					}
+					
+					clearTimeout(oLi.timer);
+					
+				},150);
+			};
+			
+			if(aUl[i].getElementsByTagName('li').length==10){
+			
+				clearInterval(oBtn.timer);
+				alert('任务失败！');	
+				window.location.reload();
+				return;
+			}
+			
+			aUl[i].appendChild(oLi);				
+		}
+	}
+};
+
+function neibor(obj){
+	
+	var arr=[getPrev(obj),getRight(obj),getNext(obj),getLeft(obj)]
+		
+	for(var i=0;i<arr.length;i++){
+	
+		if( !arr[i] || arr[i].mark || arr[i]==getLast(arr[i].parentNode) ) continue;
+	
+		if( obj.className==arr[i].className ){
+		
+			obj.mark=arr[i].mark=1;
+			neibor(arr[i]);
+		}
+	}
+}
+
+function getLeft(obj){
+
+	var count=0;
+	
+	while( getNext(obj)!=getLast(obj.parentNode) ){
+	
+		obj=getNext(obj);
+		count++;
+	}
+	
+	obj=getLast( getPrev(obj.parentNode) );
+	
+	while( obj && count>=0 ){
+	
+		obj=getPrev(obj);
+		count--;		
+	}
+	
+	return obj;
+}
+
+function getRight(obj){
+
+	var count=0;
+	
+	while( getNext(obj)!=getLast(obj.parentNode) ){
+	
+		obj=getNext(obj);
+		count++;
+	}
+	
+	obj=getLast( getNext(obj.parentNode) );
+	
+	while( obj && count>=0 ){
+	
+		obj=getPrev(obj);
+		count--;		
+	}
+	
+	return obj;
+}
+
+function getPrev(obj){ 
+	
+	if( !obj || !obj.previousSibling )return null;
+	
+	return obj.previousSibling.nodeType==1 ? obj.previousSibling : getPrev(obj.previousSibling);
+}
+
+function getNext(obj){
+	
+	if( !obj || !obj.nextSibling )return null;
+	
+	return obj.nextSibling.nodeType==1 ? obj.nextSibling : getNext(obj.nextSibling);
+}
+
+function getLast(obj){
+	
+	if( !obj || !obj.lastChild )return null;
+	
+	return obj.lastChild.nodeType==1 ? obj.lastChild : getPrev(obj.lastChild);
+}
+
+function getStyle(obj,attr){ 
+	return obj.currentStyle?obj.currentStyle[attr]:getComputedStyle(obj)[attr]; 
+}	
+
+function shake(obj,attr,slot,amp,endFn){
+	if(obj.onOff)return;
+	obj.onOff=true;
+	var pos=parseInt(getStyle(obj,attr));
+	var arr=[];
+	var num=0;
+	for(var i=amp;i>0;i-=2){
+		arr.push(i,-i);
+	}
+	arr.push(0);
+	clearInterval(obj.shake);
+	obj.shake=setInterval(function(){
+		obj.style[attr]=pos+arr[num]+'px';
+		num++;
+		if(num==arr.length){
+			clearInterval(obj.shake);
+			endFn&&endFn();
+			obj.onOff=false;
+		}
+	}, slot);
+}
+
+</script>
+</head>
+<body>
+<a href="index.html" id="tofirstpage"></a>
+<div id="box">
+	<dl>
+		<dt>得分：<span>0</span><em></em></dt>
+		<dd><input type="button" value="开始" /></dd>	
+	</dl>
+	<div id="main">
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+		<ul></ul>
+	</div>
+	<p></p>
+</div>
+</body>
+</html>

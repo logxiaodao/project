@@ -1,0 +1,324 @@
+
+
+<!DOCTYPE html>
+<!--
+*名称：贪吃蛇
+*作者：龙祥君
+*邮箱：1254624823@qq.com
+*描述：
+经典的贪吃蛇游戏，使用面向过程的方法实现。通过方向键控制蛇的移动，吃到"果子"后身体会自动变长。其实在游戏中并不存在运动元素，整个地图是一个大table，而蛇是一个由td元素组成的数组对象，通过设置数组中各个td的背景色来生成"蛇"。在方向键onmousedown的时候，通过在数组头部添加td、在尾部删除td来模拟运动效果。
+-->
+<html>
+<head>
+<meta charset="utf-8" />
+<title>贪吃蛇</title>
+	<style type="text/css">
+		#tofirstpage {
+			position: absolute;
+			left: 10px;
+			top: 10px;
+			width: 30px;
+			height: 30px;
+			border-radius: 50%;
+			background: url(../img/tofirstpage.jpg) no-repeat;
+			background-position: -62px -233px;
+			z-index: 25;
+		}
+
+	</style>
+</head>
+<body>
+<a href="index.html" id="tofirstpage"></a>
+<script>
+
+
+//reset();
+
+
+(function reset(){
+
+
+	var oTa = document.createElement('table');
+	var oTb = document.createElement('tbody');
+  	var index = 0;
+  	var snakeMove = null;
+  	var timer = null;
+	
+	for(var i=0;i<40;i++){			//循环控制地图的高
+
+
+		var oTr=document.createElement('tr');
+
+
+		for(var j=0;j<40;j++){		//循环控制地图的宽
+
+
+			var oTd=document.createElement('td');
+
+
+			oTd.style.cssText='width:8px; height:8px; padding:0; border: 2p solid #ccc; background: #ccc;';	//设置td的样式
+			oTr.appendChild(oTd);		//行中加td
+		}
+
+
+		oTb.appendChild(oTr);			//tbody中加tr
+	}
+
+
+	oTa.appendChild(oTb);
+	oTa.style.cssText='margin:80px auto 0; border:10px solid #333; background:#ccc;';		//地图的样式
+
+
+	document.body.appendChild(oTa);			//将地图加进页面
+  	oTa.cellSpacing = '2';
+
+
+	var aTd=oTb.getElementsByTagName('td');
+
+
+	fruit();
+
+
+	function fruit(){
+
+
+		var num=Math.floor(Math.random()*aTd.length);			//食物出现的位置
+
+
+		if(num!=index){					//食物是否出现在上一个位置
+
+
+      		index = num;
+			aTd[index].style.cssText='border: 2px solid #333; background: red;';		//食物样式
+
+
+		}else{
+
+
+			fruit();
+		}
+	}
+
+
+	snake();
+
+
+	function snake(){
+
+
+		var rows=oTb.rows;
+		var arr=[]
+
+
+		litleSnake();
+
+
+		function litleSnake(){
+
+
+			var ini=rows.length/2-1;
+
+
+      		arr = [[ini,ini+1]]
+
+
+			snakeColor(arr);
+		}
+		//蛇身设置
+		function snakeColor(arr){
+
+
+			for(var i=1;i<arr.length;i++){
+
+
+				rows[arr[i][0]].cells[arr[i][1]].style.cssText='background: #555; border: 2px solid #333;';
+			}
+
+
+			rows[arr[0][0]].cells[arr[0][1]].style.cssText='background: #eee; border: 2px solid #333;';
+		}
+
+
+		var json={
+			left  : {key:true,timer:null},
+			up    : {key:true,timer:null},
+			right : {key:true,timer:null},
+			down  : {key:true,timer:null}
+		};
+
+
+		var aDir=[];
+		//按键监控
+		document.onkeydown=function (ev){
+
+
+			var ev=ev||event;
+
+
+			for(var i=37;i<41;i++){
+
+
+				if(ev.keyCode==i && ev.keyCode!=aDir[0]){
+
+
+					aDir.unshift(ev.keyCode);
+					break;
+				}
+			}
+
+
+			aDir.length=2;
+
+
+			if(Math.abs(aDir[0]-aDir[1])==2)return;
+
+
+			switch(ev.keyCode){
+
+
+        case 32:
+          timer ? (function(){clearInterval(timer);timer=null;})() : snakeMove && snakeMove();
+          break;
+
+
+				case 37:
+
+
+					if(!json.left.key)return;
+					onOff('left');
+					fnTimer('left',0,-1);
+					break;
+
+
+				case 38:
+
+
+					if(!json.up.key)return;
+					onOff('up');
+					fnTimer('up',-1,0);
+					break;
+
+
+				case 39:
+
+
+					if(!json.right.key)return;
+					onOff('right');
+					fnTimer('right',0,1);
+					break;
+
+
+				case 40:
+
+
+					if(!json.down.key)return;
+					onOff('down');
+					fnTimer('down',1,0);
+					break;
+
+
+			} //switch
+		}; //onkeydown
+		
+		//开关
+		function onOff(dir){
+
+
+			for(var i in json){
+
+
+				if(i==dir){
+
+
+					json[i].key=false;
+
+
+				}else{
+
+
+					json[i].key=true;
+					clearInterval(timer);
+				}
+			}
+		}
+
+
+		function fnTimer(dir,m,n){
+	 
+      snakeMove = function(){ fnTimer(dir,m,n) };
+			
+			timer=setInterval(function (){
+
+
+				if(arr[0][0]+m<0||arr[0][1]+n<0||arr[0][0]+m>39||arr[0][1]+n>39){
+
+
+					clearInterval(timer);
+					fail();
+					return;
+				}
+
+
+				for(var i=2;i<arr.length;i++){
+
+
+					if( arr[0][0]+m==arr[i][0] && arr[0][1]+n==arr[i][1] ){
+
+
+						clearInterval(timer);
+						fail();
+					}
+				}
+
+
+				arr.unshift([arr[0][0]+m,arr[0][1]+n]);
+
+
+				if(rows[arr[0][0]].cells[arr[0][1]].style.backgroundColor!='red'){
+
+
+					snakeTail();
+
+
+				}else{
+
+
+					fruit();
+				}
+
+
+			},100);   //蛇运动速度
+		}
+
+
+		function fail(){
+
+
+			alert('任务失败！');
+			document.body.removeChild(oTa);   //初始化地图
+			reset();
+		}
+
+
+		function snakeTail(){
+
+
+			rows[arr[arr.length-1][0]].cells[arr[arr.length-1][1]].style.cssText='background: #ccc; border: 2px solid #ccc;';  //蛇运动轨迹样式
+			arr.pop(arr[arr.length-1]);
+			snakeColor(arr);
+		}
+	}
+
+
+  !window.pop && (function(){alert('  方向键：移动/开始游戏，空格键： 暂停/开始游戏'); window.pop = 1;})()
+
+
+
+
+})();
+
+
+</script>
+</body>
+</html>
+
